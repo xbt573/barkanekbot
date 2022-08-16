@@ -186,7 +186,7 @@ class AnekBot {
             return true;
         }).forEach(x => this._anekList.add(x.message));
 
-        setTimeout(() => this._anekLoop(channel), 10000);
+        setTimeout(() => this._anekLoop(channel), 60000);
     }
 
     /**
