@@ -5,8 +5,8 @@
   "type": "module",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^18.7.3",
     "@types/config": "^3.3.0",
+    "@types/node": "^18.7.3",
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
     "eslint": "^8.22.0",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "config": "^3.3.7",
+    "delay": "^5.0.0",
     "grammy": "^1.10.1",
     "input": "^1.0.1",
     "telegram": "^2.10.7"

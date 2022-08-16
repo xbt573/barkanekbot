@@ -4,6 +4,7 @@ import { helpers, Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 
 import input from 'input';
+import delay from 'delay';
 
 /**
  * Converts {@link Set} to {@link Array}
@@ -213,14 +214,10 @@ class AnekBot {
      * @function
      */
     private async _startAnekLoop(): Promise<void> {
-        async function delay(ms: number) {
-            await new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        this._channels.forEach(async x => {
-            await this._anekLoop(x);
+        for (const channel of this._channels) {
+            await this._anekLoop(channel);
             await delay(7500);
-        });
+        }
 
         setTimeout(this._startAnekLoop.bind(this), 1000);
     }
