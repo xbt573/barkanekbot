@@ -2,7 +2,7 @@ version: "3"
 
 services:
     bot:
-        build: Dockerfile
+        build: .
 
         volumes:
             - ./config:/app/config
