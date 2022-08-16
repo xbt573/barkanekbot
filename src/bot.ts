@@ -204,7 +204,7 @@ class AnekBot {
         if (this._anekList.size > 100000)
             this._popAneks((this._anekList.size - 100000) + aneks.length);
 
-        aneks.forEach(x => this_._anekList.add(x.message));
+        aneks.forEach(x => this._anekList.add(x.message));
     }
 
     /**
@@ -222,7 +222,7 @@ class AnekBot {
             await delay(7500);
         });
 
-        setTimeout(1000, this._startAnekLoop);
+        setTimeout(this._startAnekLoop, 1000);
     }
 }
 
