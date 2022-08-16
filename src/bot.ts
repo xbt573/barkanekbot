@@ -47,13 +47,6 @@ class AnekBot {
     private _anekList: Set<string>;
 
     /**
-     * Requests limit
-     * @private
-     * @property
-     */
-     private _limit: number;
-
-    /**
      * Bot instance
      * @private
      * @property
@@ -87,22 +80,10 @@ class AnekBot {
         });
 
         this._anekList = new Set<string>();
+
         this._channels = channels;
 
-        this._limit = 0;
-        this._resetLimit();
-
         this._init(session);
-    }
-
-    /**
-     * Reset {@link _limit}
-     * @private
-     * @function
-     */
-    private _resetLimit() {
-        this._limit = 0;
-        setInterval(() => this._resetLimit(), 1000);
     }
 
     /**
@@ -185,60 +166,45 @@ class AnekBot {
      * @param {string} channel
      */
     private async _anekLoop(channel: string): Promise<void> {
-        if (this._limit >= 15) {
-            setTimeout(() => this._anekLoop(channel), 1000);
-            return;
-        }
-
         const random = (min: number, max: number) => Math.floor(Math.random() * (max - min) ) + min;
 
-        // eslint-disable-next-line
-        const checkMessage = (message: any): boolean => {
-            if (!message) {
-                return false;
-            }
-
-            if (message.className != 'Message') {
-                return false;
-            }
-
-            if (message.message.includes('@')) {
-                return false;
-            }
-
-            return true;
-        };
-
         const peer = await this._client.getEntity(channel);
-        this._limit++;
 
         // eslint-disable-next-line
         const fullChannel: any = await this._client.invoke(new Api.channels.GetFullChannel({
             channel: channel
         }));
-        this._limit++;
 
         if (fullChannel.fullChat["pts"] == undefined) {
             throw Error('Channel is chat.');
         }
 
-        const randomId: number = random(0, fullChannel.fullChat.pts);
+        const randomIds: Array<number> = Array.from({ length: 100 }, () => random(0, fullChannel.fullChat.pts));
 
         const messages: helpers.TotalList<Api.Message> = await this._client.getMessages(peer, {
-            ids: [randomId]
+            ids: randomIds
         });
-        this._limit++;
 
-        const message = messages[0];
+        const aneks = messages.filter(element => {
+            if (!element) {
+                return false;
+            }
 
-        let add: boolean = checkMessage(message);
-        if (add) {
-            if (this._anekList.size > 100000)
-                this._popAneks((this._anekList.size - 100000) + 1);
+            if (element.className != 'Message') {
+                return false;
+            }
 
-            this._anekList.add(message.message);
-        }
-        setTimeout(() => this._anekLoop(channel), 5000);
+            if (element.message.includes('@')) {
+                return false;
+            }
+
+            return true;
+        });
+
+        if (this._anekList.size > 100000)
+            this._popAneks((this._anekList.size - 100000) + aneks.length);
+
+        aneks.forEach(x => this_._anekList.add(x.message));
     }
 
     /**
@@ -248,13 +214,15 @@ class AnekBot {
      */
     private async _startAnekLoop(): Promise<void> {
         async function delay(ms: number) {
-            await new Promise( resolve => setTimeout(resolve, ms) );
+            await new Promise(resolve => setTimeout(resolve, ms));
         }
 
         this._channels.forEach(async x => {
             await this._anekLoop(x);
-            await delay(5000);
+            await delay(7500);
         });
+
+        setTimeout(1000, this._startAnekLoop);
     }
 }
 
