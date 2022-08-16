@@ -47,6 +47,13 @@ class AnekBot {
     private _anekList: Set<string>;
 
     /**
+     * Requests limit
+     * @private
+     * @property
+     */
+     private _limit: number;
+
+    /**
      * Bot instance
      * @private
      * @property
@@ -80,10 +87,37 @@ class AnekBot {
         });
 
         this._anekList = new Set<string>();
-
         this._channels = channels;
 
+        this._limit = 0;
+        this._resetLimit();
+
         this._init(session);
+    }
+
+    /**
+     * Reset {@link _limit}
+     * @private
+     * @function
+     */
+    private _resetLimit() {
+        this._limit = 0;
+        setInterval(() => this._resetLimit(), 1000);
+    }
+
+    /**
+     * Pop N jokes from {@link _aneksList}
+     * @private
+     * @function
+     * @param {number} count - Count of jokes to pop
+     */
+    private _popAneks(count: number): void {
+        let i = 0;
+
+        for (const element of setToArray(this._anekList)) {
+            if (i > count) return;
+            this._anekList.delete(element);
+        }
     }
 
     /**
@@ -151,42 +185,54 @@ class AnekBot {
      * @param {string} channel
      */
     private async _anekLoop(channel: string): Promise<void> {
+        if (this._limit >= 15) {
+            setTimeout(() => this._anekLoop(channel), 1000);
+            return;
+        }
         const random = (min: number, max: number) => Math.floor(Math.random() * (max - min) ) + min;
 
         const peer = await this._client.getEntity(channel);
+        this._limit++;
 
         // eslint-disable-next-line
         const fullChannel: any = await this._client.invoke(new Api.channels.GetFullChannel({
             channel: channel
         }));
+        this._limit++;
 
         if (fullChannel.fullChat["pts"] == undefined) {
             throw Error('Channel is chat.');
         }
 
-        const randomIds: Array<number> = Array.from({ length: 20 }, () => random(0, fullChannel.fullChat.pts));
+        const randomId: number = random(0, fullChannel.fullChat.pts);
 
         const messages: helpers.TotalList<Api.Message> = await this._client.getMessages(peer, {
-            ids: randomIds
+            ids: [randomId]
         });
+        this._limit++;
 
-        messages.filter(element => {
-            if (!element) {
-                return false;
-            }
+        const message = messages[0];
 
-            if (element.className != 'Message') {
-                return false;
-            }
+        let add: boolean = true;
+        if (!message) {
+            add = false;
+        }
 
-            if (element.message.includes('@')) {
-                return false;
-            }
+        if (message.className != 'Message') {
+            add = false;
+        }
 
-            return true;
-        }).forEach(x => this._anekList.add(x.message));
+        if (message.message.includes('@')) {
+            add = false;
+        }
 
-        setTimeout(() => this._anekLoop(channel), 60000);
+        if (add) {
+            if (this._anekList.size > 100000)
+                this._popAneks((this._anekList.size - 100000) + 1);
+
+            this._anekList.add(message.message);
+        }
+        setTimeout(() => this._anekLoop(channel), 1000);
     }
 
     /**
