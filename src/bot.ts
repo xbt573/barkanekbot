@@ -222,7 +222,7 @@ class AnekBot {
             await delay(7500);
         });
 
-        setTimeout(this._startAnekLoop, 1000);
+        setTimeout(this._startAnekLoop.bind(this), 1000);
     }
 }
 
