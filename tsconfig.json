@@ -8,6 +8,7 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "build",
+    "sourceMap": true,
     "moduleResolution": "nodenext"
   },
   "include": ["src/**/*"],

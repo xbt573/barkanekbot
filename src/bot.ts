@@ -238,7 +238,7 @@ class AnekBot {
 
             this._anekList.add(message.message);
         }
-        setTimeout(() => this._anekLoop(channel), 1000);
+        setTimeout(() => this._anekLoop(channel), 5000);
     }
 
     /**
@@ -253,7 +253,7 @@ class AnekBot {
 
         this._channels.forEach(async x => {
             await this._anekLoop(x);
-            await delay(1000);
+            await delay(5000);
         });
     }
 }
