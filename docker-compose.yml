@@ -5,7 +5,7 @@ services:
         build: Dockerfile
 
         volumes:
-            ./config:/app/config
+            - ./config:/app/config
 
         environment:
             - NODE_ENV=production
