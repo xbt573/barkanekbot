@@ -1,0 +1,25 @@
+{
+  "name": "barkanekbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.7.3",
+    "@types/config": "^3.3.0",
+    "@typescript-eslint/eslint-plugin": "^5.33.0",
+    "@typescript-eslint/parser": "^5.33.0",
+    "eslint": "^8.22.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "config": "^3.3.7",
+    "grammy": "^1.10.1",
+    "input": "^1.0.1",
+    "telegram": "^2.10.7"
+  },
+  "scripts": {
+    "start": "node --experimental-specifier-resolution=node build",
+    "build": "tsc"
+  }
+}
