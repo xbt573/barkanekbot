@@ -189,7 +189,25 @@ class AnekBot {
             setTimeout(() => this._anekLoop(channel), 1000);
             return;
         }
+
         const random = (min: number, max: number) => Math.floor(Math.random() * (max - min) ) + min;
+
+        // eslint-disable-next-line
+        const checkMessage = (message: any): boolean => {
+            if (!message) {
+                return false;
+            }
+
+            if (message.className != 'Message') {
+                return false;
+            }
+
+            if (message.message.includes('@')) {
+                return false;
+            }
+
+            return true;
+        };
 
         const peer = await this._client.getEntity(channel);
         this._limit++;
@@ -213,19 +231,7 @@ class AnekBot {
 
         const message = messages[0];
 
-        let add: boolean = true;
-        if (!message) {
-            add = false;
-        }
-
-        if (message.className != 'Message') {
-            add = false;
-        }
-
-        if (message.message.includes('@')) {
-            add = false;
-        }
-
+        let add: boolean = checkMessage(message);
         if (add) {
             if (this._anekList.size > 100000)
                 this._popAneks((this._anekList.size - 100000) + 1);
