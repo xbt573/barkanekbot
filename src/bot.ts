@@ -216,7 +216,7 @@ class AnekBot {
     private async _startAnekLoop(): Promise<void> {
         for (const channel of this._channels) {
             await this._anekLoop(channel);
-            await delay(7500);
+            await delay(10000);
         }
 
         setTimeout(this._startAnekLoop.bind(this), 1000);
