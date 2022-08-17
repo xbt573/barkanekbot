@@ -21,6 +21,6 @@
   },
   "scripts": {
     "start": "node --experimental-specifier-resolution=node build",
-    "build": "tsc"
+    "build": "tsc --build --verbose"
   }
 }

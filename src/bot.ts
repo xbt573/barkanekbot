@@ -292,11 +292,22 @@ class AnekBot {
      */
     private async _antiSpamMiddleware(ctx: Context, next: NextFunction): Promise<void> {
         if (!ctx) return;
-        if (!ctx.from) return;
-        if (!(ctx.from.id in this._users)) return;
-        if (Date.now() - this._users[ctx.from.id].getTime() < 1000) return;
+        if (!(ctx.message?.from || ctx.inlineQuery?.from)) return;
 
-        this._users[ctx.from.id] = new Date();
+        let id;
+        if (ctx.message?.from) {
+            id = ctx.message.from.id;
+        }
+
+        if (ctx.inlineQuery?.from) {
+            id = ctx.inlineQuery.from.id;
+        }
+
+        if (!id) return;
+        if (!(id in this._users)) this._users[id] = new Date("January 01, 1970, 00:00:00");
+        if (Date.now() - this._users[id].getTime() < 1000) return;
+
+        this._users[id] = new Date();
         await next();
     }
 }
