@@ -1,4 +1,4 @@
-import { Bot, Context } from 'grammy';
+import { Bot, Context, NextFunction } from 'grammy';
 
 import { helpers, Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
@@ -19,6 +19,15 @@ function setToArray<T>(set: Set<T>): Array<T> {
     }
 
     return outArr
+}
+
+/**
+ * Generate random numbers
+ * @param {number} min - Minimal number
+ * @param {number} max - Maximum number
+ */
+function random(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min) ) + min;
 }
 
 /**
@@ -54,6 +63,13 @@ class AnekBot {
      */
     private _channels: Array<string>;
 
+    /**
+     * Dictionary with last interact with users
+     * @private
+     * @property
+     */
+    private _users: Record<number, Date>;
+
 
     /**
      * Class constructor
@@ -71,9 +87,13 @@ class AnekBot {
                 channels: Array<string>) {
         this._bot = new Bot(botToken);
 
+        this._users = {};
+        this._bot.use(this._antiSpamMiddleware.bind(this));
+
         this._bot.command('start', this._start);
         this._bot.command('help', this._help);
         this._bot.command('anek', this._anek.bind(this));
+        this._bot.on('inline_query', this._anekInline.bind(this));
 
         const session: StringSession = new StringSession(stringSession || '');
         this._client = new TelegramClient(session, apiId, apiHash, {
@@ -99,6 +119,7 @@ class AnekBot {
         for (const element of setToArray(this._anekList)) {
             if (i > count) return;
             this._anekList.delete(element);
+            i++;
         }
     }
 
@@ -154,10 +175,52 @@ class AnekBot {
      * Anek command
      * @private
      * @function
-     * @param {Context} context
+     * @param {Context} ctx
      */
     private async _anek(ctx: Context): Promise<void> {
-        await ctx.reply(setToArray(this._anekList)[Math.floor(Math.random() * this._anekList.size)]);
+        await ctx.reply(setToArray(this._anekList)[random(0, this._anekList.size)]);
+    }
+
+    /**
+     * Inline anek command
+     * @private
+     * @function
+     * @param {Context} ctx
+     */
+    private async _anekInline(ctx: Context): Promise<void> {
+        const inlineAnswer = [];
+
+        const ids: Array<number> = [];
+        for (let i = 0; i < 10; i++) {
+            const id = random(0, this._anekList.size);
+            const anek = setToArray(this._anekList)[id];
+
+            if (ids.includes(id)) {
+                i--; continue;
+            }
+
+            ids.push(id);
+            inlineAnswer.push(this._generateAnekInline(id, anek));
+        }
+
+        await ctx.answerInlineQuery(inlineAnswer);
+    }
+
+    /**
+     * Generate inline answer
+     * @param {number} id - Id of the answer
+     * @param {string} anek - Joke to send
+     */
+    // eslint-disable-next-line
+    private _generateAnekInline(id: number, anek: string): any {
+        return {
+            type: 'article',
+            id: id,
+            title: anek,
+            input_message_content: {
+                message_text: anek
+            }
+        };
     }
 
     /**
@@ -167,8 +230,6 @@ class AnekBot {
      * @param {string} channel
      */
     private async _anekLoop(channel: string): Promise<void> {
-        const random = (min: number, max: number) => Math.floor(Math.random() * (max - min) ) + min;
-
         const peer = await this._client.getEntity(channel);
 
         // eslint-disable-next-line
@@ -216,10 +277,27 @@ class AnekBot {
     private async _startAnekLoop(): Promise<void> {
         for (const channel of this._channels) {
             await this._anekLoop(channel);
-            await delay(10000);
+            await delay(30000);
         }
 
         setTimeout(this._startAnekLoop.bind(this), 1000);
+    }
+
+    /**
+     * Anti spam middleware
+     * @private
+     * @function
+     * @param {Context} ctx
+     * @param {NextFunction} next
+     */
+    private async _antiSpamMiddleware(ctx: Context, next: NextFunction): Promise<void> {
+        if (!ctx) return;
+        if (!ctx.from) return;
+        if (!(ctx.from.id in this._users)) return;
+        if (Date.now() - this._users[ctx.from.id].getTime() < 1000) return;
+
+        this._users[ctx.from.id] = new Date();
+        await next();
     }
 }
 
