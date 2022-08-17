@@ -260,6 +260,10 @@ class AnekBot {
                 return false;
             }
 
+            if (element.message.trim() == '') {
+                return false;
+            }
+
             return true;
         });
 
