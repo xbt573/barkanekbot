@@ -256,17 +256,18 @@ class AnekBot {
         await ctx.answerInlineQuery(inlineAnswer);
     }
 
-    // eslint-disable-next-line
     private async _onNewMessage(event: NewMessageEvent): Promise<void> {
-        console.log('1');
         if (!event.isChannel) return;
 
-        const channel = event.chat;
-        console.log(typeof channel);
+        const channel = await event.message.getChat();
         if(!channel) return;
 
         if (channel.className != 'Channel') return;
-        console.log(channel.username);
+
+        if (channel.username in this._channels) {
+            this._messageCount[channel.username]++;
+        }
+
     }
 
     /**
