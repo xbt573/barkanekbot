@@ -263,6 +263,7 @@ class AnekBot {
         if(!channel) return;
 
         if (channel.className != 'Channel') return;
+        if (!channel.username) return;
 
         if (channel.username in this._channels) {
             this._messageCount[channel.username]++;
