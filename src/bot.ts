@@ -2,6 +2,7 @@ import { Bot, Context, NextFunction } from 'grammy';
 
 import { helpers, Api, TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
+import { NewMessage, NewMessageEvent } from 'telegram/events';
 
 import input from 'input';
 import delay from 'delay';
@@ -64,6 +65,20 @@ class AnekBot {
     private _channels: Array<string>;
 
     /**
+     * Message count for each channel
+     * @private
+     * @property
+     */
+    private _messageCount: Record<string, number>;
+
+    /**
+     * Channel peers
+     * @private
+     * @property
+     */
+    private _peers: Record<string, Api.Channel>;
+
+    /**
      * Dictionary with last interact with users
      * @private
      * @property
@@ -86,6 +101,9 @@ class AnekBot {
                 stringSession: string | undefined,
                 channels: Array<string>) {
         this._bot = new Bot(botToken);
+
+        this._peers = {};
+        this._messageCount = {};
 
         this._users = {};
         this._bot.use(this._antiSpamMiddleware.bind(this));
@@ -140,6 +158,38 @@ class AnekBot {
         console.log('Session string sent to your chat, use it to avoid login next time.');
 
         await this._client.sendMessage('me', { message: session.save() });
+
+        // eslint-disable-next-line
+        let fullChannel: any;
+        let peer;
+        for (const channel of this._channels) {
+            fullChannel = await this._client.invoke(new Api.channels.GetFullChannel({
+                channel: channel
+            }));
+
+            if (fullChannel.fullChat["pts"] == undefined) {
+                throw Error('Channel is chat.');
+            }
+
+            this._messageCount[channel] = fullChannel.fullChat.pts;
+            peer = await this._client.getEntity(channel);
+
+            if (!peer) {
+                throw Error('Channel is not present (wtf)');
+            }
+
+            if (peer.className != 'Channel') {
+                throw Error('Channel is chat.');
+            }
+
+            this._peers[channel] = peer;
+
+            await delay(1000);
+        }
+        console.log('channels reloaded, starting bot and loops');
+
+        this._client.addEventHandler(this._onNewMessage.bind(this), new NewMessage());
+
         this._startAnekLoop();
         this._bot.start({
             drop_pending_updates: true
@@ -206,6 +256,19 @@ class AnekBot {
         await ctx.answerInlineQuery(inlineAnswer);
     }
 
+    // eslint-disable-next-line
+    private async _onNewMessage(event: NewMessageEvent): Promise<void> {
+        console.log('1');
+        if (!event.isChannel) return;
+
+        const channel = event.chat;
+        console.log(typeof channel);
+        if(!channel) return;
+
+        if (channel.className != 'Channel') return;
+        console.log(channel.username);
+    }
+
     /**
      * Generate inline answer
      * @param {number} id - Id of the answer
@@ -230,18 +293,10 @@ class AnekBot {
      * @param {string} channel
      */
     private async _anekLoop(channel: string): Promise<void> {
-        const peer = await this._client.getEntity(channel);
+        const message = this._messageCount[channel];
+        const peer = this._peers[channel];
 
-        // eslint-disable-next-line
-        const fullChannel: any = await this._client.invoke(new Api.channels.GetFullChannel({
-            channel: channel
-        }));
-
-        if (fullChannel.fullChat["pts"] == undefined) {
-            throw Error('Channel is chat.');
-        }
-
-        const randomIds: Array<number> = Array.from({ length: 100 }, () => random(0, fullChannel.fullChat.pts));
+        const randomIds: Array<number> = Array.from({ length: 100 }, () => random(0, message));
 
         const messages: helpers.TotalList<Api.Message> = await this._client.getMessages(peer, {
             ids: randomIds
